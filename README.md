@@ -54,3 +54,5 @@ commands:
     ptz                 control pan/tilt/zoom
     proxy               run an RTSP redirect proxy
 ```
+
+The `proxy` command accepts `--port` (default: 8554) or the `CAMERA_PROXY_PORT` environment variable.
