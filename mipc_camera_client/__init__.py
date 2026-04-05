@@ -148,10 +148,11 @@ class MipcCameraClient:
             response_type="jpg",
         )
 
-    def get_rtmp_stream(self, token: Literal["p0", "p1", "p2", "p3"] = "p0"):
-        """gets the URL of the RTMP live stream from camera
-
-        TODO: refactor quality selection"""
+    def get_rtmp_stream(
+        self,
+        token: Literal["p0", "p1", "p2", "p3"] = "p0",
+        protocol: Literal["rtmp", "rtsp"] = "rtmp",
+    ):
         resp = self.run_rpc(
             "ccm_play",
             {
@@ -161,7 +162,7 @@ class MipcCameraClient:
                 "dsetup": 1,
                 "dsetup_stream": "RTP_Unicast",
                 "dsetup_trans": 1,
-                "dsetup_trans_proto": "rtmp",
+                "dsetup_trans_proto": protocol,
                 "dtoken": token,
             },
         )

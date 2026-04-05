@@ -12,6 +12,7 @@ and using the OEM's app proxies all the video through random IP addresses which 
 - getting a snapshot
 - getting a stream URL
 - control pan/tilt
+- RTSP redirect proxy
 
 ## Using the library
 
@@ -35,7 +36,7 @@ Also see [examples/](./examples/).
 ## CLI
 
 ```
-$ usage: mipc_camera_client [-h] [--host HOST] [--user USER] {snapshot,stream,ptz} ...
+$ usage: mipc_camera_client [-h] [--host HOST] [--user USER] {snapshot,stream,ptz,proxy} ...
 
 CLI client for MIPC cameras
 
@@ -47,8 +48,9 @@ options:
 commands:
   Available commands
 
-  {snapshot,stream,ptz}
+  {snapshot,stream,ptz,proxy}
     snapshot            take a JPEG snapshot
     stream              get RTMP stream URL
     ptz                 control pan/tilt/zoom
+    proxy               run an RTSP redirect proxy
 ```

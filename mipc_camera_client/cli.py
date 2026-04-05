@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import datetime
 import logging
 import os
@@ -61,6 +62,47 @@ def ptz_handler(
         c.control_ptz(tilt_x=x, tilt_y=y, speed_x=speed_x, speed_y=speed_y)
 
 
+def proxy_handler(c: MipcCameraClient, port: int) -> None:
+    async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        cseq = 0
+        while True:
+            line = await reader.readline()
+            if line in (b"\r\n", b"\n", b""):
+                break
+            if line.lower().startswith(b"cseq:"):
+                cseq = int(line.split()[1])
+
+        try:
+            stream_url = c.get_rtmp_stream(protocol="rtsp")
+        except Exception:
+            LOGGER.exception("failed to get RTSP stream URL")
+            response = f"RTSP/1.0 500 Internal Server Error\r\nCSeq: {cseq}\r\n\r\n"
+            writer.write(response.encode())
+            await writer.drain()
+            writer.close()
+            return
+
+        LOGGER.info(f"redirecting to {stream_url}")
+        response = (
+            f"RTSP/1.0 301 Moved Permanently\r\n"
+            f"CSeq: {cseq}\r\n"
+            f"Location: {stream_url}\r\n"
+            f"\r\n"
+        )
+        writer.write(response.encode())
+        await writer.drain()
+        writer.close()
+
+    async def run():
+        server = await asyncio.start_server(handle_client, "0.0.0.0", port)
+        addrs = ", ".join(str(s.getsockname()) for s in server.sockets)
+        LOGGER.info(f"RTSP redirect proxy listening on {addrs}")
+        async with server:
+            await server.serve_forever()
+
+    asyncio.run(run())
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="CLI client for MIPC cameras")
     parser.add_argument(
@@ -78,7 +120,8 @@ def parse_args() -> argparse.Namespace:
         "--quiet",
         action="store_true",
         default=False,
-        help="Silence all output except for the snapshot filename or stream URL")
+        help="Silence all output except for the snapshot filename or stream URL",
+    )
     subparsers = parser.add_subparsers(
         title="commands",
         description="Available commands",
@@ -121,6 +164,18 @@ def parse_args() -> argparse.Namespace:
 
     ptz_parser.set_defaults(handler=ptz_handler)
 
+    proxy_parser = subparsers.add_parser(
+        "proxy",
+        help="run an RTSP redirect proxy",
+    )
+    proxy_parser.set_defaults(handler=proxy_handler)
+    proxy_parser.add_argument(
+        "--port",
+        type=int,
+        default=8554,
+        help="port to listen on (default: 8554)",
+    )
+
     return parser.parse_args()
 
 
@@ -151,6 +206,7 @@ def main():
     c.login(args.user, os.environ["CAMERA_PASSWORD"])
 
     _run_handler(args, c)
+
 
 if __name__ == "__main__":
     main()
