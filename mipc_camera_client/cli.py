@@ -172,8 +172,8 @@ def parse_args() -> argparse.Namespace:
     proxy_parser.add_argument(
         "--port",
         type=int,
-        default=8554,
-        help="port to listen on (default: 8554)",
+        default=os.getenv("CAMERA_PROXY_PORT", 8554),
+        help="port to listen on (default: 8554, or CAMERA_PROXY_PORT env var)",
     )
 
     return parser.parse_args()
