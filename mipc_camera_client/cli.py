@@ -62,7 +62,7 @@ def ptz_handler(
         c.control_ptz(tilt_x=x, tilt_y=y, speed_x=speed_x, speed_y=speed_y)
 
 
-def proxy_handler(c: MipcCameraClient, port: int) -> None:
+def proxy_handler(c: MipcCameraClient, port: int, interface: str) -> None:
     async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         cseq = 0
         while True:
@@ -94,7 +94,7 @@ def proxy_handler(c: MipcCameraClient, port: int) -> None:
         writer.close()
 
     async def run():
-        server = await asyncio.start_server(handle_client, "0.0.0.0", port)
+        server = await asyncio.start_server(handle_client, interface, port)
         addrs = ", ".join(str(s.getsockname()) for s in server.sockets)
         LOGGER.info(f"RTSP redirect proxy listening on {addrs}")
         async with server:
@@ -174,6 +174,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=os.getenv("CAMERA_PROXY_PORT", 8554),
         help="port to listen on (default: 8554, or CAMERA_PROXY_PORT env var)",
+    )
+    proxy_parser.add_argument(
+        "--interface",
+        default=os.getenv("CAMERA_PROXY_INTERFACE", "0.0.0.0"),
+        help="interface to listen on (default: 0.0.0.0, or CAMERA_PROXY_INTERFACE env var)",
     )
 
     return parser.parse_args()

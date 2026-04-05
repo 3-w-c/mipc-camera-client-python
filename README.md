@@ -55,4 +55,4 @@ commands:
     proxy               run an RTSP redirect proxy
 ```
 
-The `proxy` command accepts `--port` (default: 8554) or the `CAMERA_PROXY_PORT` environment variable.
+The `proxy` command accepts `--port` (default: 8554) or the `CAMERA_PROXY_PORT` environment variable, and `--interface` (default: 0.0.0.0) or the `CAMERA_PROXY_INTERFACE` environment variable.
